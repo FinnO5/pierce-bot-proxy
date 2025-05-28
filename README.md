@@ -37,6 +37,10 @@ okay here’s what you need to do:
 5. Go to the **Bot** tab and copy the bot token.  
 
 6. put your new bot token in the .env file in the program directory
+   
+7. run the run_all.bat file and once evyerhting is running run !bind in the channel you want the bot to bind to
+
+8. open on the localhost and put in the password(defult 1423(a prime number 😍)) and you should be good to go
 
 Tenor search widget isnt working!!!!
 1. you need a tenor search api key, so you will first need to make a developer aocunt and then get one from their site

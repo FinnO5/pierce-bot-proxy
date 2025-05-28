@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Its-Victor/discord-message-css@latest/dist/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+      /* Container styling scoped for the chat widget */
+      .discord-chat-widget {
+        font-family: 'Inter', sans-serif;
+        background-color: #36393f;
+        color: #dcddde;
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+      }
+
+      /* Header styling for channel title */
+      .discord-chat-header {
+        background: #202225;
+        padding: 8px 12px;
+        font-weight: 600;
+        border-bottom: 1px solid #2f3136;
+        font-size: 14px;
+      }
+
+      /* Message area styling with custom scrollbar */
+      .discord-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .discord-chat-messages::-webkit-scrollbar {
+        width: 8px;
+      }
+      .discord-chat-messages::-webkit-scrollbar-thumb {
+        background: #2f3136;
+        border-radius: 4px;
+      }
+
+      /* Avatar image sizing */
+      .discord-message__avatar {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+        object-fit: cover;
+      }
+
+      .discord-message {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      /* Timestamp styling */
+      .discord-message__timestamp {
+        font-size: 12px;
+        color: #72767d;
+        margin-left: 6px;
+      }
+
+      /* Input container styling */
+      .discord-chat-input {
+        display: flex;
+        padding: 8px;
+        border-top: 1px solid #2f3136;
+        background-color: #40444b;
+      }
+      .discord-chat-input input[type="text"] {
+        flex: 1;
+        padding: 8px;
+        background-color: #2f3136;
+        border: none;
+        border-radius: 4px;
+        color: #dcddde;
+        font-size: 14px;
+        transition: background-color 0.2s ease, outline 0.2s ease;
+      }
+      .discord-chat-input button {
+        margin-left: 8px;
+        padding: 8px 12px;
+        background-color: #7289da;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      /* Remove default number input spinners */
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .discord-chat-input input[type="number"] {
+        padding: 8px 12px;
+        background-color: #2f3136;
+        border: none;
+        border-radius: 4px;
+        color: #dcddde;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        transition: background-color 0.2s ease, outline 0.2s ease, width 0.2s ease;
+      }
+      .discord-chat-input input:focus {
+        outline: 2px solid #7289da;
+        background-color: #40444b;
+      }
+      .discord-chat-input button:hover {
+        background-color: #5b6eae;
+      }
+
+      /* GIF search widget styling */
+      .tenor_search_widget {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #2f3136;
+        color: #dcddde;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 300px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      }
+      .tenor_search_widget h2 {
+        margin-top: 0;
+        font-size: 20px;
+        color: #fff;
+      }
+      .tenor_search_widget input[type="text"] {
+        width: 60%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #202225;
+        color: #dcddde;
+        margin-right: 10px;
+      }
+      .tenor_search_widget button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        background-color: #5865f2;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .tenor_search_widget button:hover {
+        background-color: #4752c4;
+      }
+      .tenor_search_widget .gif-grid {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        height: 200px;
+        overflow-y: auto;
+      }
+      .tenor_search_widget .gif-card {
+        background-color: #202225;
+        border-radius: 8px;
+        overflow: hidden;
+        text-align: center;
+        width: 75px;
+      }
+      .tenor_search_widget .gif-card img {
+        width: 100%;
+        display: block;
+      }
+      .tenor_search_widget .gif-card button {
+        width: 100%;
+        padding: 8px;
+        background-color: #5865f2;
+        border: none;
+        color: #fff;
+        border-top: 1px solid #2f3136;
+        cursor: pointer;
+      }
+      .tenor_search_widget .gif-card button:hover {
+        background-color: #4752c4;
+      }
+
+      /* Layout adjustments for widget alignment */
+      .layout-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      #my-chat-box {
+        height: 400px;
+        width: 100%;
+        max-width: 400px;
+        border: 1px solid #ccc;
+      }
+      .tenor_search_widget {
+        width: 200px;
+        margin: 20px;
+        margin-top: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display: flex; align-items: flex-start; gap: -100px;">
+      <div>
+        <input type="checkbox" id="toggleGifSearch" checked> Toggle GIF Search <p id="last-refresh-time-display">Last refresh:</p>
+        <div id="my-chat-box" style="height: 400px; width: 100%; max-width: 600px; border: 1px solid #ccc;"></div>
+      </div>
+      <div class="tenor_search_widget" id="gifSearchWidget" style="width: 300px;">
+        <h2>GIF Search</h2>
+        <input type="text" id="searchInput" placeholder="Search Tenor GIFs..."></input>
+        <button onclick="searchGifs()">Search</button>
+        <div class="gif-grid" id="gifResults"></div>
+      </div>
+    </div>
+    <script>
+      // Toggle the visibility of the GIF search widget when checkbox state changes
+      document.getElementById('toggleGifSearch').addEventListener('change', function() {
+        const widget = document.getElementById('gifSearchWidget');
+        widget.style.display = this.checked ? 'block' : 'none';
+      });
+
+      // Handle global Enter key events for user input actions
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+          const active = document.activeElement;
+          const id = active.id;
+          if (id === "message-count-input") {
+            refreshMessages();
+          } else if (id === "searchInput") {
+            searchGifs();
+          } else {
+            sendMessage();
+          }
+        }
+      });
+
+      const socket = io('http://localhost:5000'); // Connect to local Flask socket server
+      socket.on('connect', () => console.log('Connected to server'));
+      socket.on('Flask_force_message_update', data => {
+        updateMessageArea(data.messages);
+      });
+      socket.on('disconnect', () => console.log('Disconnected from server'));
+
+      /**
+       * Send the user-composed message to the server if not empty.
+       */
+      function sendMessage() {
+        const text = document.getElementById("chat-input-box").value;
+        if (!text) return;
+        fetch('/message_send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message_text: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "sent") {
+            document.getElementById("chat-input-box").value = "";
+            refreshMessages();
+          }
+        })
+        .catch(err => console.error('Error sending message:', err));
+      }
+
+      /**
+       * Replace failed GIF images with their URL text for consistent formatting.
+       */
+      function handleGifError(img) {
+        console.warn("Failed to load image:", img.src);
+        const fallback = document.createElement("span");
+        fallback.textContent = img.src;
+        img.parentNode.replaceChild(fallback, img);
+      }
+
+      /**
+       * Validate loaded images; revert to link if image is invalid placeholder.
+       */
+      function ensureProperLoad(img) {
+        if (img.naturalWidth === 1 && img.naturalHeight === 1) {
+          console.warn("Invalid image placeholder detected:", img.src);
+          const fallback = document.createElement("span");
+          fallback.textContent = img.src;
+          img.parentNode.replaceChild(fallback, img);
+        }
+      }
+
+      /**
+       * Request and render the specified number of recent messages.
+       */
+      function refreshMessages() {
+        let count = parseInt(document.getElementById("message-count-input")?.value) || 15;
+        fetch('/messages_refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amt_messages: count })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data.messages)) updateMessageArea(data.messages);
+        })
+        .catch(err => console.error('Error refreshing messages:', err));
+      }
+
+      /**
+       * Render fetched messages into the chat area in chronological order.
+       */
+      function updateMessageArea(messages) {
+        const container = document.querySelector(".discord-chat-messages");
+        if (!container) return;
+        container.innerHTML = '';
+        messages.slice().reverse().forEach(msg => {
+          const el = document.createElement("div");
+          el.className = "discord-message";
+          let content = msg.content;
+          const tenorRegex = /https?:\/\/(?:media\.)?tenor\.com\/[^\s]+/g;
+          const links = content.match(tenorRegex) || [];
+          links.forEach(link => {
+            const gifUrl = link + ".gif";
+            let imgHTML = `<img src="${gifUrl}" style="max-width: 300px; margin-top: 7px; max-height: 300px; border-radius: 5px;" onload="ensureProperLoad(this)" onerror="handleGifError(this)"/>`;
+            if (content.replace(tenorRegex, '').trim()) imgHTML = '<br>' + imgHTML;
+            content = content.replace(link, imgHTML);
+          });
+          el.innerHTML = `
+            <div class="discord-message__header">
+              <img class="discord-message__avatar" src="${msg.avatar}" />
+              <span class="discord-message__author" style="color: ${msg.usernameColor};">${msg.username}</span>
+              <span class="discord-message__timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            <div class="discord-message__content">${content}</div>
+          `;
+          container.appendChild(el);
+        });
+        container.scrollTop = container.scrollHeight;
+        document.getElementById("last-refresh-time-display").textContent = "Last refresh: " + new Date().toLocaleString();
+      }
+
+      /**
+       * Initialize and render the chat widget within a specified container.
+       */
+      function renderDiscordChat(containerId, messages) {
+        const root = document.getElementById(containerId);
+        if (!root) return;
+        const widget = document.createElement("div");
+        widget.className = "discord-chat-widget";
+        const header = document.createElement("div");
+        header.className = "discord-chat-header";
+        header.textContent = "# welcome!";
+        const msgArea = document.createElement("div");
+        msgArea.className = "discord-chat-messages";
+        const inputArea = document.createElement("div");
+        inputArea.className = "discord-chat-input";
+        inputArea.innerHTML = `
+          <input type="text" id="chat-input-box" placeholder="Type a message..." />
+          <button onclick="sendMessage()" id="chat-send-button">Send</button>
+          <button onclick="refreshMessages()" id="chat-refresh-button">Refresh</button>
+          <div style="position: relative; display: flex; align-items: center;"> 
+            <input type="number" id="message-count-input" placeholder="Message Count" min="1" 
+              style="width: 135px; margin-left: 8px;" oninput="resizeInputTyping(this)" onblur="resizeInputFinished(this)" />
+            <span id="input-mirror" style="position: absolute; visibility: hidden; white-space: pre; font: 14px Inter, sans-serif;"></span>
+          </div>
+        `;
+        widget.appendChild(header);
+        widget.appendChild(msgArea);
+        widget.appendChild(inputArea);
+        root.appendChild(widget);
+        updateMessageArea(messages);
+      }
+
+      // Adjust text input width dynamically during and after typing
+      function resizeInputFinished(input) {
+        const mirror = document.getElementById("input-mirror");
+        mirror.textContent = input.value || input.placeholder;
+        input.style.width = mirror.offsetWidth + 25 + "px";
+      }
+      function resizeInputTyping(input) {
+        const mirror = document.getElementById("input-mirror");
+        mirror.textContent = input.value;
+        input.style.width = mirror.offsetWidth + 25 + "px";
+      }
+
+      // Initialize chat widget on page load
+      renderDiscordChat("my-chat-box", []);
+      refreshMessages();
+    </script>
+    <script>
+      // GIF search widget API integration
+      const API_KEY = ':p'; //put your tenor search api here!
+      async function searchGifs() {
+        const query = document.getElementById('searchInput').value;
+        const container = document.getElementById('gifResults');
+        container.innerHTML = '';
+        try {
+          const response = await fetch(`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${API_KEY}&limit=9`);
+          const data = await response.json();
+          data.results.forEach(gif => {
+            const url = gif.media_formats.gif.url;
+            const card = document.createElement('div');
+            card.className = 'gif-card';
+            card.innerHTML = `
+              <button onclick="sendToChatBox('${url}')" style="border:none; background:none; cursor:pointer; transition:0.3s;" 
+                onmouseover="this.style.filter='brightness(70%)'" 
+                onmouseout="this.style.filter='brightness(100%)'">
+                <img src="${url}" alt="GIF" style="display:block;"> 
+              </button>
+            `;
+            container.appendChild(card);
+          });
+        } catch (err) {
+          console.error('GIF search error:', err);
+        }
+      }
+
+      // Append selected GIF URL to chat input field
+      function sendToChatBox(url) {
+        const input = document.getElementById("chat-input-box");
+        input.value = `${input.value} ${url}`;
+      }
+    </script>
+  </body>
+</html>

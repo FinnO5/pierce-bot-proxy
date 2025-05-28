@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+ 
+  <style>
+    /* Make iframe fill the container if you like: */
+    #dynamic-frame {
+      width: 100%;
+      height: 500px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  
+  <button onclick="sendSignal('1')">Button 1</button>
+  <button onclick="sendSignal('2')">Button 2</button>
+  <button onclick="sendSignal('3')">Button 3</button>
+  <button onclick="sendSignal('4')">Button 4</button>
+  <button onclick="sendSignal('5')">Button 5</button>
+  <button onclick="sendSignal('6')">Button 6</button>
+
+  <!-- replace your div with an iframe -->
+  <iframe id="dynamic-frame" sandbox="allow-scripts" style="border: none; outline: none;"></iframe>
+
+
+  <script>
+
+      //should make error messages less "angry"
+   
+
+    function sendSignal(buttonId) {
+      //also clear the console so if you are using this as a panic button no colse data is left behind
+      console.clear();
+
+
+      fetch('/button_click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ button_id: buttonId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        //console.log('Server response:', data);
+        const frame = document.getElementById('dynamic-frame');
+
+        // Reset to blank before reinjecting if you like:
+        frame.srcdoc = '';
+
+        // Inject new HTML+JS into the iframe, runs in its own context
+        frame.srcdoc = data.new_section;
+      })
+      .catch(err => console.error('Error:', err));
+    }
+
+    
+  </script>
+</body>
+</html>
